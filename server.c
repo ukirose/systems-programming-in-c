@@ -95,7 +95,22 @@ void accept_client_connections(int server_fd) {
             exit(1);
         }
 
-        respond(client_fd);
+        pid_t pid = fork();
+        if (pid < 0) {
+            fprintf(stderr, "fork(2) failed: %s\n", strerror(errno));
+            exit(1);
+        }
+
+        if (pid == 0) {
+            /* 子プロセスが待ち受けソケットを握ったままだと、親プロセスを止めてもポートが解放されない */
+            close(server_fd);
+
+            respond(client_fd);
+            close(client_fd);
+            exit(0);
+        }
+
+        /* 応答は子プロセスに任せてあり、親プロセスが持ち続けると接続ごとに fd が漏れる */
         close(client_fd);
     }
 }
