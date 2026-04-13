@@ -2,6 +2,7 @@
 
 #include "server.h"
 #include "io.h"
+#include "request.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +15,9 @@
 #define MAX_BACKLOG 5
 
 static int try_bind(struct addrinfo *candidates, int family);
-static void respond(int client_fd);
+static void serve_client(int client_fd);
+static void respond(int client_fd, const struct HTTPRequest *req);
+static void respond_bad_request(int client_fd);
 
 int create_server_socket(const char *port) {
     /* 指定しなかったメンバは 0 になる。getaddrinfo はそれを「指定なし」と読む */
@@ -105,7 +108,7 @@ void accept_client_connections(int server_fd) {
             /* 子プロセスが待ち受けソケットを握ったままだと、親プロセスを止めてもポートが解放されない */
             close(server_fd);
 
-            respond(client_fd);
+            serve_client(client_fd);
             close(client_fd);
             exit(0);
         }
@@ -115,13 +118,39 @@ void accept_client_connections(int server_fd) {
     }
 }
 
-/* 疎通を確かめるための固定応答。リクエストはまだ読まない */
-static void respond(int client_fd) {
-    static const char message[] =
+static void serve_client(int client_fd) {
+    char buf[MAX_REQUEST_HEADER_SIZE];
+    struct HTTPRequest req;
+
+    if (read_request_header(client_fd, buf, sizeof buf) < 0
+        || parse_http_request(buf, &req) < 0) {
+        respond_bad_request(client_fd);
+        return;
+    }
+
+    respond(client_fd, &req);
+}
+
+/* 解析できたことを確かめる仮の応答。ファイルを返すのはこれから */
+static void respond(int client_fd, const struct HTTPRequest *req) {
+    static const char header[] =
         "HTTP/1.0 200 OK\r\n"
         "Content-Type: text/plain\r\n"
+        "\r\n";
+
+    write_all(client_fd, header, sizeof header - 1);
+    write_all(client_fd, req->method, strlen(req->method));
+    write_all(client_fd, " ", 1);
+    write_all(client_fd, req->path, strlen(req->path));
+    write_all(client_fd, "\n", 1);
+}
+
+static void respond_bad_request(int client_fd) {
+    static const char message[] =
+        "HTTP/1.0 400 Bad Request\r\n"
+        "Content-Type: text/plain\r\n"
         "\r\n"
-        "listening\n";
+        "Bad Request\n";
 
     write_all(client_fd, message, sizeof message - 1);
 }
