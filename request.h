@@ -1,0 +1,33 @@
+/* HTTP リクエストの読み取りと解析 */
+
+#pragma once
+
+#include <stddef.h>
+#include <sys/types.h>
+
+/* ヘッダ全体をこのバッファ1つに収める。上限が無いとメモリを使い切られる */
+#define MAX_REQUEST_HEADER_SIZE 4096
+
+/* 受け付けるヘッダ行の数。1行が 128バイトより短ければ、バッファより先にこちらが効く */
+#define MAX_HEADER_FIELDS 32
+
+struct HTTPHeaderField {
+    char *name;   /* 読み込んだバッファの中を指す */
+    char *value;  /* 同上。値の前の空白は読み飛ばしてある */
+};
+
+struct HTTPRequest {
+    char *method;                                 /* バッファの中を指す */
+    char *path;                                   /* 同上 */
+    struct HTTPHeaderField fields[MAX_HEADER_FIELDS];
+    int field_count;
+};
+
+/* fd から空行までを buf に読む。読めた長さを返す。上限超過や切断は -1 */
+ssize_t read_request_header(int fd, char *buf, size_t size);
+
+/*
+ * buf を '\0' で区切りながら解析する。不正な書式なら -1
+ * req の各ポインタは buf の中を指すので、buf より長生きさせてはいけない
+ */
+int parse_http_request(char *buf, struct HTTPRequest *req);
