@@ -6,4 +6,4 @@
 int create_server_socket(const char *port);
 
 /* 接続ごとに fork して応答する。戻らない */
-void accept_client_connections(int server_fd);
+void accept_client_connections(int server_fd, const char *docroot);
