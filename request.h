@@ -11,14 +11,21 @@
 /* 受け付けるヘッダ行の数。1行が 128バイトより短ければ、バッファより先にこちらが効く */
 #define MAX_HEADER_FIELDS 32
 
+enum HTTPMethod {
+    METHOD_GET,
+    METHOD_HEAD,
+    METHOD_POST,
+    METHOD_UNKNOWN,  /* 解析はできたが対応していないメソッド */
+};
+
 struct HTTPHeaderField {
     char *name;   /* 読み込んだバッファの中を指す */
     char *value;  /* 同上。値の前の空白は読み飛ばしてある */
 };
 
 struct HTTPRequest {
-    char *method;                                 /* バッファの中を指す */
-    char *path;                                   /* 同上 */
+    enum HTTPMethod method;
+    char *path;                                   /* 読み込んだバッファの中を指す */
     struct HTTPHeaderField fields[MAX_HEADER_FIELDS];
     int field_count;
 };

@@ -50,6 +50,8 @@ def main():
 
         check_static_files()
         check_rejects()
+        check_methods()
+        check_bad_requests()
     finally:
         # テストが成功しても失敗してもクラッシュしても、必ず最後にhttpdを終了
         # docroot に置いた細工は temp_path が各テストの中で消している
@@ -107,6 +109,32 @@ def check_rejects():
 
     # %00 を復元する実装なら index.html に化ける。復元しないので、ただの名前として扱われる
     check("パスの %00 は復元しない", 404, request("/index.html%00.txt").status)
+
+
+# GET以外のHTTPメソッドに対して適切なステータスを返すかテスト
+def check_methods():
+    res_head = request("/index.html", method="HEAD")
+    res_get = request("/index.html")
+    check("HEAD は本文を返さない", b"", res_head.body)
+    check("HEAD と GET は同じヘッダー", res_get.headers, res_head.headers)
+
+    res_post = request("/index.html", method="POST")
+    check("静的ファイルへの POST は 405", 405, res_post.status)
+    check("405 には Allow が付く", "GET, HEAD", res_post.header("Allow"))
+
+    res_put = request("/index.html", method="PUT")
+    res_bad_get = send(b"get / HTTP/1.0\r\n\r\n")
+    check("PUT は 501", 501, res_put.status)
+    check("小文字の get は 501", 501, res_bad_get.status)
+
+
+# 壊れた入力を 400 にするかテスト。落ちたら接続が切れて応答そのものが来ない
+def check_bad_requests():
+    check("リクエスト行が欠けたら 400", 400, send(b"GET\r\n\r\n").status)
+
+    large_headers = [f"X-Pad-{i}: " + "0" * 40 for i in range(200)]
+    res_large_headers = request("/index.html", headers=large_headers)
+    check("上限を超えるヘッダは 400", 400, res_large_headers.status)
 
 
 # 通信・判定ヘルパー

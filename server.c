@@ -127,9 +127,25 @@ static void serve_client(int client_fd, const char *docroot) {
         return;
     }
 
+    if (req.method == METHOD_UNKNOWN) {
+        respond_not_implemented(client_fd);
+        return;
+    }
+
     struct FileInfo info;
     if (resolve_file(docroot, req.path, &info) < 0) {
         respond_not_found(client_fd);
+        return;
+    }
+
+    /* 静的ファイルは送られてきたデータを処理できない */
+    if (req.method == METHOD_POST) {
+        respond_method_not_allowed(client_fd);
+        return;
+    }
+
+    if (req.method == METHOD_HEAD) {
+        respond_with_file_header(client_fd, &info);
         return;
     }
 
