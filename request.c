@@ -9,6 +9,7 @@
 static char *take_line(char **rest);
 static int parse_request_line(char *line, struct HTTPRequest *req);
 static int parse_header_field(char *line, struct HTTPHeaderField *field);
+static enum HTTPMethod parse_method(const char *s);
 static char *split_at(char *s, char delim);
 
 ssize_t read_request_header(int fd, char *buf, size_t size) {
@@ -63,10 +64,10 @@ static char *take_line(char **rest) {
 
 /* "GET /index.html HTTP/1.0" を3つに割る */
 static int parse_request_line(char *line, struct HTTPRequest *req) {
-    req->method = line;
-
     req->path = split_at(line, ' ');
     if (!req->path) return -1;
+
+    req->method = parse_method(line);
 
     char *version = split_at(req->path, ' ');
     if (!version) return -1;
@@ -85,6 +86,15 @@ static int parse_header_field(char *line, struct HTTPHeaderField *field) {
     field->name  = line;
     field->value = value + strspn(value, " \t");
     return 0;
+}
+
+/* メソッドは大文字小文字を区別する (RFC 9110 9.1)。小文字の get は GET ではない */
+static enum HTTPMethod parse_method(const char *s) {
+    if (strcmp(s, "GET")  == 0) return METHOD_GET;
+    if (strcmp(s, "HEAD") == 0) return METHOD_HEAD;
+    if (strcmp(s, "POST") == 0) return METHOD_POST;
+
+    return METHOD_UNKNOWN;
 }
 
 /* delim を最初に見つけた位置で s を切り、後ろ半分の先頭を返す */
