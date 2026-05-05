@@ -52,6 +52,7 @@ def main():
         check_rejects()
         check_methods()
         check_bad_requests()
+        check_process_cleanup(server.pid)
     finally:
         # テストが成功しても失敗してもクラッシュしても、必ず最後にhttpdを終了
         # docroot に置いた細工は temp_path が各テストの中で消している
@@ -135,6 +136,21 @@ def check_bad_requests():
     large_headers = [f"X-Pad-{i}: " + "0" * 40 for i in range(200)]
     res_large_headers = request("/index.html", headers=large_headers)
     check("上限を超えるヘッダは 400", 400, res_large_headers.status)
+
+
+# fork の後始末をテスト。1回では出ない漏れを 20回で溜める
+def check_process_cleanup(server_pid):
+    fds_before = count_open_fds(server_pid)
+
+    for _ in range(20):
+        request("/index.html")
+
+    check("20 リクエストの後も親プロセスが生きている", True, is_alive(server_pid))
+    check("ゾンビが残らない", 0, count_zombie_children(server_pid))
+
+    # 閉じ忘れていれば 1リクエストにつき 1本ずつ増える
+    # 本数そのものは OS が勝手に開くものが混ざって当てにならないので、増減で見る
+    check("fd が漏れていない", fds_before, count_open_fds(server_pid))
 
 
 # 通信・判定ヘルパー
@@ -242,6 +258,35 @@ def temp_path(name):
             path.rmdir()
         else:
             path.unlink(missing_ok=True)
+
+
+# シグナル 0 は送らずに送れるかどうかだけ見る。プロセスの生存確認の定石
+def is_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+# pid を親プロセスに持つゾンビの数。ps の状態欄が Z で始まるものがゾンビ
+def count_zombie_children(pid):
+    out = subprocess.run(["ps", "-Ao", "pid=,ppid=,stat="],
+                         capture_output=True, text=True).stdout
+
+    count = 0
+    for line in out.splitlines():
+        # 状態欄は "Z" だけでなく "Z+" のように印が付くことがある
+        fields = line.split(None, 2)
+        if len(fields) == 3 and fields[2].startswith("Z") and int(fields[1]) == pid:
+            count += 1
+
+    return count
+
+
+# pid が開いている fd の本数。/proc/{pid}/fd に fd 1本につき 1つのリンクが並ぶ
+def count_open_fds(pid):
+    return len(os.listdir(f"/proc/{pid}/fd"))
 
 
 if __name__ == "__main__":
