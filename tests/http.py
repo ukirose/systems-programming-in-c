@@ -29,7 +29,7 @@ TIMEOUT_SECS = 3.0
 # httpdへ渡す相対パスとコマンド
 HTTPD_BIN = "./httpd"
 DOCROOT_ARG = "docroot"
-SERVER_ARGS = [HTTPD_BIN, f"--port={PORT}", DOCROOT_ARG]
+SERVER_ARGS = [HTTPD_BIN, "--debug", f"--port={PORT}", DOCROOT_ARG]
 
 passed = 0
 failed = 0
