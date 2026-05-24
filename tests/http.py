@@ -53,6 +53,7 @@ def main():
         check_methods()
         check_bad_requests()
         check_process_cleanup(server.pid)
+        check_bad_ports()
     finally:
         # テストが成功しても失敗してもクラッシュしても、必ず最後にhttpdを終了
         # docroot に置いた細工は temp_path が各テストの中で消している
@@ -153,6 +154,23 @@ def check_process_cleanup(server_pid):
     check("fd が漏れていない", fds_before, count_open_fds(server_pid))
 
 
+# 範囲外のポートで起動しないことをテスト
+# getaddrinfo は下位 16ビットしか見ないので、弾かないと 99999 が 34463 になる
+def check_bad_ports():
+    for port in ("99999", "0", "-1", "http"):
+        # docroot は正しいものを渡す。そうしないと docroot が原因で落ちても合格になる
+        argv = [HTTPD_BIN, "--debug", f"--port={port}", DOCROOT_ARG]
+        try:
+            done = subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                  timeout=TIMEOUT_SECS)
+            exit_code = done.returncode
+        except subprocess.TimeoutExpired:
+            # 弾き損ねると待ち受けに入って戻ってこない。落ちずに固まるのを防ぐ
+            exit_code = 0
+
+        check(f"--port={port} では起動しない", 1, exit_code)
+
+# ==============================================================================
 # 通信・判定ヘルパー
 # ==============================================================================
 

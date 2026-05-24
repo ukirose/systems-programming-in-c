@@ -24,6 +24,7 @@ struct Options {
 
 static void parse_options(int argc, char *argv[], struct Options *opts);
 static const char *option_value(const char *arg, const char *name);
+static int is_valid_port(const char *port);
 
 int main(int argc, char *argv[]) {
     struct Options opts = { .port = DEFAULT_PORT };
@@ -89,6 +90,27 @@ static void parse_options(int argc, char *argv[], struct Options *opts) {
     }
 
     opts->docroot = argv[i];
+
+    /* getaddrinfo は範囲外のポートの下位 16ビットしか見ない。99999 は 34463 になる */
+    if (!is_valid_port(opts->port)) {
+        fprintf(stderr, "port must be 1..65535: %s\n", opts->port);
+        exit(1);
+    }
+}
+
+/* 十進数だけで、1 から 65535 に収まるか */
+static int is_valid_port(const char *port) {
+    if (*port == '\0') return 0;
+
+    long value = 0;
+    for (const char *p = port; *p; p++) {
+        if (*p < '0' || *p > '9') return 0;
+
+        value = value * 10 + (*p - '0');
+        if (value > 65535) return 0;
+    }
+
+    return value >= 1;
 }
 
 /* "--port=8080" が name と一致すれば "8080" を返す。値を空けて書く形は受けない */
