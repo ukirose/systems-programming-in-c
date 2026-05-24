@@ -4,6 +4,7 @@
 #include "request.h"
 #include "response.h"
 #include "file.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,11 +30,8 @@ int create_server_socket(const char *port) {
     /* 第1引数の NULL は、このホストの全てのアドレスで待ち受ける指定 */
     struct addrinfo *candidates;
     int err = getaddrinfo(NULL, port, &hints, &candidates);
-    if (err != 0) {
-        /* getaddrinfo は errno を使わず独自のコードを返す */
-        fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(err));
-        exit(1);
-    }
+    /* getaddrinfo は errno を使わず独自のコードを返す */
+    if (err != 0) log_error_and_exit("getaddrinfo(): %s", gai_strerror(err));
 
     /*
      * 候補は複数返る。IPv6 を先に試すのは、その1本で IPv4 の接続も受けられるため
@@ -44,10 +42,7 @@ int create_server_socket(const char *port) {
 
     freeaddrinfo(candidates);
 
-    if (server_fd < 0) {
-        fprintf(stderr, "failed to listen on port %s\n", port);
-        exit(1);
-    }
+    if (server_fd < 0) log_error_and_exit("failed to listen on port %s", port);
 
     return server_fd;
 }
@@ -93,14 +88,12 @@ void accept_client_connections(int server_fd, const char *docroot) {
             /* シグナルで中断されただけなので、待ち受けに戻る */
             if (errno == EINTR) continue;
 
-            fprintf(stderr, "accept(2) failed: %s\n", strerror(errno));
-            exit(1);
+            log_error_and_exit("accept(2) failed: %s", strerror(errno));
         }
 
         pid_t pid = fork();
         if (pid < 0) {
-            fprintf(stderr, "fork(2) failed: %s\n", strerror(errno));
-            exit(1);
+            log_error_and_exit("fork(2) failed: %s", strerror(errno));
         }
 
         if (pid == 0) {

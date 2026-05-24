@@ -2,12 +2,16 @@
 
 #include "server.h"
 #include "env.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <errno.h>
 
+#define SERVER_IDENT "httpd"
 #define DEFAULT_PORT "80"
-#define USAGE "Usage: %s [--port=n] [--chroot --user=u --group=g] <docroot>\n"
+#define USAGE "Usage: %s [--port=n] [--debug] [--chroot --user=u --group=g] <docroot>\n"
 
 struct Options {
     const char *port;
@@ -15,6 +19,7 @@ struct Options {
     const char *user;
     const char *group;
     int do_chroot;
+    int debug;      /* 立っていればデーモン化せず、記録も端末へ出す */
 };
 
 static void parse_options(int argc, char *argv[], struct Options *opts);
@@ -24,14 +29,29 @@ int main(int argc, char *argv[]) {
     struct Options opts = { .port = DEFAULT_PORT };
     parse_options(argc, argv, &opts);
 
+    /* デーモン化で chdir("/") するので、相対パスのまま持ち回れない */
+    char resolved[PATH_MAX];
+    if (!realpath(opts.docroot, resolved)) {
+        log_error_and_exit("realpath(%s) failed: %s", opts.docroot, strerror(errno));
+    }
+
+    /*
+     * 以降の失敗はすべてここへ記録する
+     * chroot すると /dev/log が見えなくなるので、隔離より前に開いておく
+     */
+    if (!opts.debug) log_to_syslog(SERVER_IDENT);
+
     setup_signals();
 
     /* 1024 番未満の bind には特権が要る。権限を落とす前に済ませる */
     int server_fd = create_server_socket(opts.port);
 
-    const char *docroot = opts.docroot;
+    /* 標準入出力を /dev/null へ向けるので、隔離より前でないと開けない */
+    if (!opts.debug) become_daemon();
+
+    const char *docroot = resolved;
     if (opts.do_chroot) {
-        drop_privileges(opts.docroot, opts.user, opts.group);
+        drop_privileges(resolved, opts.user, opts.group);
 
         /* 隔離後はドキュメントルートが '/' になる */
         docroot = "";
@@ -51,6 +71,7 @@ static void parse_options(int argc, char *argv[], struct Options *opts) {
         else if ((value = option_value(argv[i], "--user")))  opts->user  = value;
         else if ((value = option_value(argv[i], "--group"))) opts->group = value;
         else if (strcmp(argv[i], "--chroot") == 0)           opts->do_chroot = 1;
+        else if (strcmp(argv[i], "--debug") == 0)            opts->debug = 1;
         else if (strcmp(argv[i], "--help") == 0) {
             fprintf(stdout, USAGE, argv[0]);
             exit(0);
