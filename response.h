@@ -14,3 +14,7 @@ void respond_not_found(int fd);
 void respond_bad_request(int fd);
 void respond_method_not_allowed(int fd);
 void respond_not_implemented(int fd);
+void respond_internal_error(int fd);
+
+/* Content-Type などは CGI 自身が出すので、ステータス行と Server だけ書く */
+void respond_cgi_header(int fd);

@@ -75,6 +75,12 @@ static int parse_request_line(char *line, struct HTTPRequest *req) {
     /* HTTP/1.x 以外は、解析できても応答の形が違うので断る */
     if (strncmp(version, HTTP_VERSION_PREFIX, sizeof HTTP_VERSION_PREFIX - 1) != 0) return -1;
 
+    /*
+     * 先に '?' を探すとクエリに版まで入るので、バージョンを切り離した後で探す
+     * 区切り文字の判定は復元より前にしかできないので、CGI にはエンコードのまま渡す
+     */
+    req->query = split_at(req->path, '?');
+
     return 0;
 }
 
@@ -86,6 +92,15 @@ static int parse_header_field(char *line, struct HTTPHeaderField *field) {
     field->name  = line;
     field->value = value + strspn(value, " \t");
     return 0;
+}
+
+const char *method_name(enum HTTPMethod method) {
+    switch (method) {
+    case METHOD_GET:  return "GET";
+    case METHOD_HEAD: return "HEAD";
+    case METHOD_POST: return "POST";
+    default:          return "";
+    }
 }
 
 /* メソッドは大文字小文字を区別する (RFC 9110 9.1)。小文字の get は GET ではない */

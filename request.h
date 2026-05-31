@@ -26,12 +26,16 @@ struct HTTPHeaderField {
 struct HTTPRequest {
     enum HTTPMethod method;
     char *path;                                   /* 読み込んだバッファの中を指す */
+    char *query;                                  /* '?' 以降。無ければ NULL。復元しない */
     struct HTTPHeaderField fields[MAX_HEADER_FIELDS];
     int field_count;
 };
 
 /* fd から空行までを buf に読む。読めた長さを返す。上限超過や切断は -1 */
 ssize_t read_request_header(int fd, char *buf, size_t size);
+
+/* 列挙を CGI へ渡す文字列に戻す */
+const char *method_name(enum HTTPMethod method);
 
 /*
  * buf を '\0' で区切りながら解析する。不正な書式なら -1
