@@ -52,6 +52,7 @@ def main():
         check_rejects()
         check_methods()
         check_bad_requests()
+        check_cgi()
         check_process_cleanup(server.pid)
         check_bad_ports()
     finally:
@@ -137,6 +138,13 @@ def check_bad_requests():
     large_headers = [f"X-Pad-{i}: " + "0" * 40 for i in range(200)]
     res_large_headers = request("/index.html", headers=large_headers)
     check("上限を超えるヘッダは 400", 400, res_large_headers.status)
+
+
+# CGIプログラムの実行と、環境変数（パラメータ）の引き渡しが正しく行われるかテスト
+def check_cgi():
+    res_cgi = request("/dump.cgi?a=1&b=%20")
+    actual_query = line_of(res_cgi.body, b"query=")
+    check("クエリはエンコードのまま渡る", b"query=a=1&b=%20", actual_query)
 
 
 # fork の後始末をテスト。1回では出ない漏れを 20回で溜める
@@ -276,6 +284,14 @@ def temp_path(name):
             path.rmdir()
         else:
             path.unlink(missing_ok=True)
+
+
+# 本文から prefix で始まる行を取る。無ければ空
+def line_of(body, prefix):
+    for line in body.split(b"\n"):
+        if line.startswith(prefix):
+            return line
+    return b""
 
 
 # シグナル 0 は送らずに送れるかどうかだけ見る。プロセスの生存確認の定石

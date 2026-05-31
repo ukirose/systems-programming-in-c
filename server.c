@@ -5,6 +5,7 @@
 #include "response.h"
 #include "file.h"
 #include "log.h"
+#include "cgi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,6 +129,11 @@ static void serve_client(int client_fd, const char *docroot) {
     struct FileInfo info;
     if (resolve_file(docroot, req.path, &info) < 0) {
         respond_not_found(client_fd);
+        return;
+    }
+
+    if (info.is_executable) {
+        run_cgi(client_fd, &req, info.path);
         return;
     }
 

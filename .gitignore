@@ -1,3 +1,4 @@
 /httpd
 *.o
+/docroot/*.cgi
 .DS_Store

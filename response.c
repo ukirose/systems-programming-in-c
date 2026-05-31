@@ -40,6 +40,19 @@ void respond_not_implemented(int fd) {
     respond_with_message(fd, "501 Not Implemented", "", "Not Implemented\n");
 }
 
+void respond_internal_error(int fd) {
+    respond_with_message(fd, "500 Internal Server Error", "", "Internal Server Error\n");
+}
+
+void respond_cgi_header(int fd) {
+    static const char header[] =
+        "HTTP/1.0 200 OK\r\n"
+        "Server: " SERVER_NAME "\r\n"
+        "Connection: close\r\n";
+
+    write_all(fd, header, sizeof header - 1);
+}
+
 /* 短い本文をその場で組み立てて送る */
 static void respond_with_message(int fd, const char *status, const char *extra_headers, const char *message) {
     size_t length = strlen(message);

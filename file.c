@@ -29,6 +29,7 @@ int resolve_file(const char *docroot, const char *url_path, struct FileInfo *inf
     if (!S_ISREG(st.st_mode)) return -1;
 
     info->size = st.st_size;
+    info->is_executable = (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0;
     return 0;
 }
 

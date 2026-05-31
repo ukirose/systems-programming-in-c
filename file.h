@@ -8,6 +8,7 @@
 struct FileInfo {
     char path[PATH_MAX];  /* docroot と URL パスを繋いだ実際のパス */
     off_t size;           /* 本文の長さ */
+    int is_executable;    /* 立っていれば配信せずに実行する */
 };
 
 /* docroot 配下の url_path を調べる。配信できないなら -1 */
