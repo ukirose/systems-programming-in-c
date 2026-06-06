@@ -1,9 +1,9 @@
 /* URL パスから配信するファイルを解決し、その内容を送り出す */
 
 #include "file.h"
+#include "my_string.h"
 #include "io.h"
 #include <stdio.h>
-#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -60,7 +60,7 @@ static const struct {
 };
 
 const char *guess_content_type(const struct FileInfo *info) {
-    const char *ext = strrchr(info->path, '.');
+    const char *ext = my_strrchr(info->path, '.');
 
     if (ext) {
         for (size_t i = 0; i < sizeof content_types / sizeof content_types[0]; i++) {

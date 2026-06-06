@@ -1,7 +1,8 @@
 /* HTTP リクエストの読み取りと解析 */
 
 #include "request.h"
-#include <string.h>
+#include "my_string.h"
+#include <strings.h>
 #include <unistd.h>
 
 #define HTTP_VERSION_PREFIX "HTTP/1."
@@ -26,7 +27,7 @@ ssize_t read_request_header(int fd, char *buf, size_t size) {
         buf[filled] = '\0';
 
         /* ヘッダの終わりは空行、つまり CRLF が2つ続く位置 */
-        if (strstr(buf, "\r\n\r\n")) return (ssize_t)filled;
+        if (my_strstr(buf, "\r\n\r\n")) return (ssize_t)filled;
     }
 
     return -1;
@@ -54,7 +55,7 @@ int parse_http_request(char *buf, struct HTTPRequest *req) {
 static char *take_line(char **rest) {
     char *line = *rest;
 
-    char *line_end = strstr(line, "\r\n");
+    char *line_end = my_strstr(line, "\r\n");
     if (!line_end) return NULL;
 
     *line_end = '\0';
@@ -73,7 +74,7 @@ static int parse_request_line(char *line, struct HTTPRequest *req) {
     if (!version) return -1;
 
     /* HTTP/1.x 以外は、解析できても応答の形が違うので断る */
-    if (strncmp(version, HTTP_VERSION_PREFIX, sizeof HTTP_VERSION_PREFIX - 1) != 0) return -1;
+    if (my_strncmp(version, HTTP_VERSION_PREFIX, sizeof HTTP_VERSION_PREFIX - 1) != 0) return -1;
 
     /*
      * 先に '?' を探すとクエリに版まで入るので、バージョンを切り離した後で探す
@@ -90,7 +91,7 @@ static int parse_header_field(char *line, struct HTTPHeaderField *field) {
     if (!value) return -1;
 
     field->name  = line;
-    field->value = value + strspn(value, " \t");
+    field->value = value + my_strspn(value, " \t");
     return 0;
 }
 
@@ -105,16 +106,16 @@ const char *method_name(enum HTTPMethod method) {
 
 /* メソッドは大文字小文字を区別する (RFC 9110 9.1)。小文字の get は GET ではない */
 static enum HTTPMethod parse_method(const char *s) {
-    if (strcmp(s, "GET")  == 0) return METHOD_GET;
-    if (strcmp(s, "HEAD") == 0) return METHOD_HEAD;
-    if (strcmp(s, "POST") == 0) return METHOD_POST;
+    if (my_strcmp(s, "GET")  == 0) return METHOD_GET;
+    if (my_strcmp(s, "HEAD") == 0) return METHOD_HEAD;
+    if (my_strcmp(s, "POST") == 0) return METHOD_POST;
 
     return METHOD_UNKNOWN;
 }
 
 /* delim を最初に見つけた位置で s を切り、後ろ半分の先頭を返す */
 static char *split_at(char *s, char delim) {
-    char *p = strchr(s, delim);
+    char *p = my_strchr(s, delim);
     if (!p) return NULL;
 
     *p = '\0';

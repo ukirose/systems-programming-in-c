@@ -1,9 +1,9 @@
 /* HTTP レスポンスのステータス行とヘッダを書く */
 
 #include "response.h"
+#include "my_string.h"
 #include "io.h"
 #include <stdio.h>
-#include <string.h>
 
 #define SERVER_NAME "httpd/0.1"
 
@@ -55,7 +55,7 @@ void respond_cgi_header(int fd) {
 
 /* 短い本文をその場で組み立てて送る */
 static void respond_with_message(int fd, const char *status, const char *extra_headers, const char *message) {
-    size_t length = strlen(message);
+    size_t length = my_strlen(message);
 
     write_headers(fd, status, extra_headers, "text/plain", (off_t)length);
     write_all(fd, message, length);
