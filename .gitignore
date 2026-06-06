@@ -2,3 +2,4 @@
 *.o
 /docroot/*.cgi
 .DS_Store
+/tests/test_my_string

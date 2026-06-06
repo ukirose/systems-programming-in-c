@@ -1,6 +1,7 @@
 /* 起動時の引数を見てサーバーを立ち上げる */
 
 #include "server.h"
+#include "my_string.h"
 #include "env.h"
 #include "log.h"
 #include <stdio.h>
@@ -71,9 +72,9 @@ static void parse_options(int argc, char *argv[], struct Options *opts) {
         if      ((value = option_value(argv[i], "--port")))  opts->port  = value;
         else if ((value = option_value(argv[i], "--user")))  opts->user  = value;
         else if ((value = option_value(argv[i], "--group"))) opts->group = value;
-        else if (strcmp(argv[i], "--chroot") == 0)           opts->do_chroot = 1;
-        else if (strcmp(argv[i], "--debug") == 0)            opts->debug = 1;
-        else if (strcmp(argv[i], "--help") == 0) {
+        else if (my_strcmp(argv[i], "--chroot") == 0)        opts->do_chroot = 1;
+        else if (my_strcmp(argv[i], "--debug") == 0)         opts->debug = 1;
+        else if (my_strcmp(argv[i], "--help") == 0) {
             fprintf(stdout, USAGE, argv[0]);
             exit(0);
         }
@@ -115,9 +116,9 @@ static int is_valid_port(const char *port) {
 
 /* "--port=8080" が name と一致すれば "8080" を返す。値を空けて書く形は受けない */
 static const char *option_value(const char *arg, const char *name) {
-    size_t name_len = strlen(name);
+    size_t name_len = my_strlen(name);
 
-    if (strncmp(arg, name, name_len) != 0 || arg[name_len] != '=') return NULL;
+    if (my_strncmp(arg, name, name_len) != 0 || arg[name_len] != '=') return NULL;
 
     return arg + name_len + 1;
 }
