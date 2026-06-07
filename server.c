@@ -133,20 +133,16 @@ static void serve_client(int client_fd, const char *docroot) {
     }
 
     if (info.is_executable) {
+        /* 実行するのは path のほう。中身は読まないので先に閉じる */
+        close(info.fd);
         run_cgi(client_fd, &req, info.path);
         return;
     }
 
-    /* 静的ファイルは送られてきたデータを処理できない */
-    if (req.method == METHOD_POST) {
-        respond_method_not_allowed(client_fd);
-        return;
-    }
+    /* 静的ファイルは送られてきたデータを処理できないので POST を断る */
+    if      (req.method == METHOD_POST) respond_method_not_allowed(client_fd);
+    else if (req.method == METHOD_HEAD) respond_with_file_header(client_fd, &info);
+    else                                respond_with_file(client_fd, &info);
 
-    if (req.method == METHOD_HEAD) {
-        respond_with_file_header(client_fd, &info);
-        return;
-    }
-
-    respond_with_file(client_fd, &info);
+    close(info.fd);
 }

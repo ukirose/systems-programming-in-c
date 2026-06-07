@@ -110,6 +110,12 @@ def check_rejects():
         path.symlink_to("/etc/passwd")
         check("docroot 外へのリンクは 404", 404, request("/outside").status)
 
+    # 調べた時点と送る時点で対象がずれていないことの確認
+    with temp_path("unreadable.txt") as path:
+        path.write_bytes(b"secret\n")
+        os.chmod(path, 0o000)
+        check("読めないファイルは 404", 404, request("/unreadable.txt").status)
+
     # %00 を復元する実装なら index.html に化ける。復元しないので、ただの名前として扱われる
     check("パスの %00 は復元しない", 404, request("/index.html%00.txt").status)
 
