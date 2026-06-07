@@ -21,14 +21,23 @@ int resolve_file(const char *docroot, const char *url_path, struct FileInfo *inf
     int len = snprintf(info->path, sizeof info->path, "%s%s", docroot, url_path);
     if (len < 0 || (size_t)len >= sizeof info->path) return -1;
 
-    /* 末尾の要素がリンクなら lstat は辿らないので S_ISREG が偽になる。途中の要素は辿る */
+    /*
+     * 調べるだけだと、送る時に開き直した先が同じ実体という保証が無い
+     * 開いてから fstat で調べ、送信もこの fd から行う
+     * O_NOFOLLOW は末尾の要素がリンクなら開かない (途中の要素は辿る)
+     * O_NONBLOCK は FIFO で書き込む側を待たないため。通常ファイルの read には効かない
+     */
+    int fd = open(info->path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+    if (fd < 0) return -1;
+
     struct stat st;
-    if (lstat(info->path, &st) < 0) return -1;
+    if (fstat(fd, &st) < 0 || !S_ISREG(st.st_mode)) {
+        close(fd);
+        return -1;
+    }
 
-    /* FIFO は書き込む側が現れるまで open が返らず、ディレクトリは read が EISDIR で落ちる */
-    if (!S_ISREG(st.st_mode)) return -1;
-
-    info->size = st.st_size;
+    info->fd            = fd;
+    info->size          = st.st_size;
     info->is_executable = (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0;
     return 0;
 }
@@ -73,17 +82,12 @@ const char *guess_content_type(const struct FileInfo *info) {
 }
 
 void send_file_body(const struct FileInfo *info, int fd) {
-    int file_fd = open(info->path, O_RDONLY);
-    if (file_fd < 0) return;
-
     char buf[COPY_BUF_SIZE];
     for (;;) {
-        ssize_t bytes_read = read(file_fd, buf, sizeof buf);
+        ssize_t bytes_read = read(info->fd, buf, sizeof buf);
         if (bytes_read <= 0) break;
 
         /* 相手が切ったあとも読み続けないよう、書けなくなったら止める */
         if (write_all(fd, buf, (size_t)bytes_read) < 0) break;
     }
-
-    close(file_fd);
 }
