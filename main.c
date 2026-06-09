@@ -10,7 +10,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#define SERVER_IDENT "httpd"
+#define SYSLOG_IDENT "httpd"
 #define DEFAULT_PORT "80"
 #define USAGE "Usage: %s [--port=n] [--debug] [--chroot --user=u --group=g] <docroot>\n"
 
@@ -24,7 +24,7 @@ struct Options {
 };
 
 static void parse_options(int argc, char *argv[], struct Options *opts);
-static const char *option_value(const char *arg, const char *name);
+static const char *find_option_value(const char *arg, const char *name);
 static int is_valid_port(const char *port);
 
 int main(int argc, char *argv[]) {
@@ -32,8 +32,8 @@ int main(int argc, char *argv[]) {
     parse_options(argc, argv, &opts);
 
     /* デーモン化で chdir("/") するので、相対パスのまま持ち回れない */
-    char resolved[PATH_MAX];
-    if (!realpath(opts.docroot, resolved)) {
+    char resolved_docroot[PATH_MAX];
+    if (!realpath(opts.docroot, resolved_docroot)) {
         log_error_and_exit("realpath(%s) failed: %s", opts.docroot, strerror(errno));
     }
 
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
      * 以降の失敗はすべてここへ記録する
      * chroot すると /dev/log が見えなくなるので、隔離より前に開いておく
      */
-    if (!opts.debug) log_to_syslog(SERVER_IDENT);
+    if (!opts.debug) redirect_log_to_syslog(SYSLOG_IDENT);
 
     setup_signals();
 
@@ -51,9 +51,9 @@ int main(int argc, char *argv[]) {
     /* 標準入出力を /dev/null へ向けるので、隔離より前でないと開けない */
     if (!opts.debug) become_daemon();
 
-    const char *docroot = resolved;
+    const char *docroot = resolved_docroot;
     if (opts.do_chroot) {
-        drop_privileges(resolved, opts.user, opts.group);
+        drop_privileges(resolved_docroot, opts.user, opts.group);
 
         /* 隔離後はドキュメントルートが '/' になる */
         docroot = "";
@@ -69,9 +69,9 @@ static void parse_options(int argc, char *argv[], struct Options *opts) {
     for (i = 1; i < argc && argv[i][0] == '-'; i++) {
         const char *value;
 
-        if      ((value = option_value(argv[i], "--port")))  opts->port  = value;
-        else if ((value = option_value(argv[i], "--user")))  opts->user  = value;
-        else if ((value = option_value(argv[i], "--group"))) opts->group = value;
+        if      ((value = find_option_value(argv[i], "--port")))  opts->port  = value;
+        else if ((value = find_option_value(argv[i], "--user")))  opts->user  = value;
+        else if ((value = find_option_value(argv[i], "--group"))) opts->group = value;
         else if (my_strcmp(argv[i], "--chroot") == 0)        opts->do_chroot = 1;
         else if (my_strcmp(argv[i], "--debug") == 0)         opts->debug = 1;
         else if (my_strcmp(argv[i], "--help") == 0) {
@@ -115,7 +115,7 @@ static int is_valid_port(const char *port) {
 }
 
 /* "--port=8080" が name と一致すれば "8080" を返す。値を空けて書く形は受けない */
-static const char *option_value(const char *arg, const char *name) {
+static const char *find_option_value(const char *arg, const char *name) {
     size_t name_len = my_strlen(name);
 
     if (my_strncmp(arg, name, name_len) != 0 || arg[name_len] != '=') return NULL;

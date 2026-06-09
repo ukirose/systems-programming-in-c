@@ -16,7 +16,7 @@ static void write_headers(int fd, const char *status, const char *extra_headers,
 
 void respond_with_file(int fd, const struct FileInfo *info) {
     respond_with_file_header(fd, info);
-    send_file_body(info, fd);
+    send_file_body(fd, info);
 }
 
 void respond_with_file_header(int fd, const struct FileInfo *info) {

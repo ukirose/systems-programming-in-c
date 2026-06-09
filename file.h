@@ -22,4 +22,4 @@ int resolve_file(const char *docroot, const char *url_path, struct FileInfo *inf
 const char *guess_content_type(const struct FileInfo *info);
 
 /* resolve_file が開いた中身を fd へ書き出す */
-void send_file_body(const struct FileInfo *info, int fd);
+void send_file_body(int fd, const struct FileInfo *info);
