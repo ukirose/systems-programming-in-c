@@ -12,7 +12,7 @@
 /* デーモン化すると標準エラー出力が /dev/null へ向くので、記録先を切り替える */
 static int use_syslog = 0;
 
-void log_to_syslog(const char *ident) {
+void redirect_log_to_syslog(const char *ident) {
     /* chroot 後ではソケットを開けないので、LOG_NDELAY で今すぐ開かせる */
     openlog(ident, LOG_PID | LOG_NDELAY, LOG_DAEMON);
     use_syslog = 1;

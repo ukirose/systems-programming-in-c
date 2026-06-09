@@ -17,7 +17,7 @@
 /* accept を待つ接続を並べておける数。溢れた接続は拒否される */
 #define MAX_BACKLOG 5
 
-static int try_bind(struct addrinfo *candidates, int family);
+static int try_listen(struct addrinfo *candidates, int family);
 static void serve_client(int client_fd, const char *docroot);
 
 int create_server_socket(const char *port) {
@@ -38,8 +38,8 @@ int create_server_socket(const char *port) {
      * 候補は複数返る。IPv6 を先に試すのは、その1本で IPv4 の接続も受けられるため
      * 返る順は決まっていないので、選ぶ側で順序を決める
      */
-    int server_fd = try_bind(candidates, AF_INET6);
-    if (server_fd < 0) server_fd = try_bind(candidates, AF_UNSPEC);
+    int server_fd = try_listen(candidates, AF_INET6);
+    if (server_fd < 0) server_fd = try_listen(candidates, AF_UNSPEC);
 
     freeaddrinfo(candidates);
 
@@ -48,8 +48,8 @@ int create_server_socket(const char *port) {
     return server_fd;
 }
 
-/* family に合う候補を順に試し、最初に開けたソケットを返す。AF_UNSPEC はすべてを試す */
-static int try_bind(struct addrinfo *candidates, int family) {
+/* family に合う候補を順に試し、最初に listen まで通った fd を返す。AF_UNSPEC はすべてを試す */
+static int try_listen(struct addrinfo *candidates, int family) {
     for (struct addrinfo *ai = candidates; ai != NULL; ai = ai->ai_next) {
         if (family != AF_UNSPEC && ai->ai_family != family) continue;
 

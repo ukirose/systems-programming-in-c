@@ -18,19 +18,19 @@
 #define RELAY_BUF_SIZE 4096
 
 static void run_child(int to_cgi[2], int from_cgi[2], const char *path, const struct HTTPRequest *req);
-static void relay_output(int fd, int from_cgi);
+static void relay_output(int client_fd, int from_cgi_read);
 static void export_cgi_env(const struct HTTPRequest *req);
 
-void run_cgi(int fd, const struct HTTPRequest *req, const char *path) {
+void run_cgi(int client_fd, const struct HTTPRequest *req, const char *path) {
     int to_cgi[2], from_cgi[2];
     if (pipe(to_cgi) < 0) {
-        respond_internal_error(fd);
+        respond_internal_error(client_fd);
         return;
     }
     if (pipe(from_cgi) < 0) {
         close(to_cgi[0]);
         close(to_cgi[1]);
-        respond_internal_error(fd);
+        respond_internal_error(client_fd);
         return;
     }
 
@@ -40,7 +40,7 @@ void run_cgi(int fd, const struct HTTPRequest *req, const char *path) {
         close(to_cgi[1]);
         close(from_cgi[0]);
         close(from_cgi[1]);
-        respond_internal_error(fd);
+        respond_internal_error(client_fd);
         return;
     }
 
@@ -54,7 +54,7 @@ void run_cgi(int fd, const struct HTTPRequest *req, const char *path) {
     close(from_cgi[1]);
 
     close(to_cgi[1]);
-    relay_output(fd, from_cgi[0]);
+    relay_output(client_fd, from_cgi[0]);
     close(from_cgi[0]);
 }
 
@@ -77,12 +77,12 @@ static void run_child(int to_cgi[2], int from_cgi[2], const char *path, const st
 }
 
 /* Content-Type などは CGI 自身が出力するので、こちらはステータス行だけ足す */
-static void relay_output(int fd, int from_cgi) {
-    respond_cgi_header(fd);
+static void relay_output(int client_fd, int from_cgi_read) {
+    respond_cgi_header(client_fd);
 
     char buf[RELAY_BUF_SIZE];
     for (;;) {
-        ssize_t bytes_read = read(from_cgi, buf, sizeof buf);
+        ssize_t bytes_read = read(from_cgi_read, buf, sizeof buf);
         if (bytes_read == 0) break;
         if (bytes_read < 0) {
             /* 子プロセスの終了による SIGCHLD で中断される。終端と混同しない */
@@ -90,7 +90,7 @@ static void relay_output(int fd, int from_cgi) {
             break;
         }
 
-        if (write_all(fd, buf, (size_t)bytes_read) < 0) break;
+        if (write_all(client_fd, buf, (size_t)bytes_read) < 0) break;
     }
 }
 

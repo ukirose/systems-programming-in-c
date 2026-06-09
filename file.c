@@ -81,7 +81,7 @@ const char *guess_content_type(const struct FileInfo *info) {
     return "application/octet-stream";
 }
 
-void send_file_body(const struct FileInfo *info, int fd) {
+void send_file_body(int fd, const struct FileInfo *info) {
     char buf[COPY_BUF_SIZE];
     for (;;) {
         ssize_t bytes_read = read(info->fd, buf, sizeof buf);
