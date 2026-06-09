@@ -13,13 +13,13 @@ int my_strcmp(const char *a, const char *b);
 /* 先頭 n 文字までで比べる。ほかは my_strcmp と同じ */
 int my_strncmp(const char *a, const char *b, size_t n);
 
-/* 最初に c が現れた位置。無ければ NULL */
+/* 最初に c が現れた位置。無ければ NULL。終端の '\0' も探索の対象 */
 char *my_strchr(const char *s, int c);
 
 /* 最後に c が現れた位置。無ければ NULL */
 char *my_strrchr(const char *s, int c);
 
-/* needle が最初に現れた位置。無ければ NULL */
+/* needle が最初に現れた位置。無ければ NULL。空の needle は先頭に一致 */
 char *my_strstr(const char *haystack, const char *needle);
 
 /* 先頭から accept に含まれる文字が続く長さ */

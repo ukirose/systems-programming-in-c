@@ -32,7 +32,6 @@ int my_strncmp(const char *a, const char *b, size_t n) {
 }
 
 char *my_strchr(const char *s, int c) {
-    /* 終端も探索の対象。my_strchr(s, '\0') は末尾を返す */
     for (;; s++) {
         if (*s == (char)c) return (char *)s;
         if (*s == '\0') return NULL;
@@ -53,7 +52,6 @@ char *my_strrchr(const char *s, int c) {
  * 探す needle は "\r\n" と "\r\n\r\n" だけなので、KMP のような前処理は割に合わない
  */
 char *my_strstr(const char *haystack, const char *needle) {
-    /* 空の needle は先頭に一致する */
     if (*needle == '\0') return (char *)haystack;
 
     for (; *haystack; haystack++) {

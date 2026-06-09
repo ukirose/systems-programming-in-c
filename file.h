@@ -8,12 +8,13 @@
 struct FileInfo {
     char path[PATH_MAX];  /* docroot と URL パスを繋いだ実際のパス */
     int fd;               /* 開いた読み取り専用の fd。呼出側が close する */
-    off_t size;           /* 本文の長さ */
+    off_t size;           /* ファイルの大きさ。そのまま Content-Length になる */
     int is_executable;    /* 立っていれば配信せずに実行する */
 };
 
 /*
  * docroot 配下の url_path を開いて調べる。配信できないなら -1
+ * docroot は先頭に繋ぐルートのパス。chroot 済みの呼出では "" が来る
  * 成功したら info->fd が開いたままになる。呼出側が close する
  */
 int resolve_file(const char *docroot, const char *url_path, struct FileInfo *info);
