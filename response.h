@@ -1,4 +1,4 @@
-/* HTTP レスポンスのステータス行とヘッダを書く */
+/* HTTP レスポンスを組み立てて書き出す */
 
 #pragma once
 
@@ -16,5 +16,8 @@ void respond_method_not_allowed(int fd);
 void respond_not_implemented(int fd);
 void respond_internal_error(int fd);
 
-/* Content-Type などは CGI 自身が出すので、ステータス行と Server だけ書く */
+/*
+ * ステータス行と Server と Connection だけを書く。ヘッダを閉じる空行は書かない
+ * Content-Type と終端の空行は CGI 自身の出力が担う
+ */
 void respond_cgi_header(int fd);

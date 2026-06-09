@@ -1,4 +1,4 @@
-/* HTTP レスポンスのステータス行とヘッダを書く */
+/* HTTP レスポンスを組み立てて書き出す */
 
 #include "response.h"
 #include "my_string.h"
@@ -61,6 +61,7 @@ static void respond_with_message(int fd, const char *status, const char *extra_h
     write_all(fd, message, length);
 }
 
+/* extra_headers は「名前: 値\r\n」を並べた塊。無ければ "" */
 static void write_headers(int fd, const char *status, const char *extra_headers,
                           const char *content_type, off_t content_length) {
     char header[HEADER_BUF_SIZE];

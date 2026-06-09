@@ -113,7 +113,7 @@ static enum HTTPMethod parse_method(const char *s) {
     return METHOD_UNKNOWN;
 }
 
-/* delim を最初に見つけた位置で s を切り、後ろ半分の先頭を返す */
+/* delim を最初に見つけた位置で s を切り、後ろ半分の先頭を返す。無ければ NULL */
 static char *split_at(char *s, char delim) {
     char *p = my_strchr(s, delim);
     if (!p) return NULL;
