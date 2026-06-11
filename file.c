@@ -9,7 +9,10 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-/* 1回の read(2) で読む量。小さいほどシステムコールの回数が増える */
+/*
+ * 1回の read(2) で読む量。ページ 1枚分
+ * 大きくするほどシステムコールは減るが、スタックに置くのでほどほどにする
+ */
 #define COPY_BUF_SIZE 4096
 
 static int is_safe_path(const char *url_path);

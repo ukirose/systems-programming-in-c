@@ -14,7 +14,7 @@
  *   読む from_cgi[0] <==============  from_cgi[1] 書く (標準出力)
  */
 
-/* パイプから1回に読む量 */
+/* パイプやソケットから1回に読む量。ページ 1枚分 (根拠は file.c の COPY_BUF_SIZE と同じ) */
 #define RELAY_BUF_SIZE 4096
 
 static void run_child(int to_cgi[2], int from_cgi[2], const char *path, const struct HTTPRequest *req);

@@ -20,7 +20,7 @@ ssize_t read_request_header(int fd, char *buf, size_t size) {
     while (filled + 1 < size) {
         ssize_t bytes_read = read(fd, buf + filled, size - filled - 1);
 
-        /* 0 は切断。空行より前に切れたなら不完全なリクエスト */
+        /* 0 は切断、負はエラー。EINTR を生む SIGCHLD は子プロセスの居ないこの段階では来ない。まとめて -1 */
         if (bytes_read <= 0) return -1;
 
         filled += (size_t)bytes_read;
