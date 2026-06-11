@@ -7,7 +7,7 @@
 
 #define SERVER_NAME "httpd/0.1"
 
-/* ステータス行と共通ヘッダが収まる大きさ */
+/* ステータス行と共通ヘッダが収まる大きさ。実測の最長は 405 応答の 137バイト */
 #define HEADER_BUF_SIZE 512
 
 static void respond_with_message(int fd, const char *status, const char *extra_headers, const char *message);
