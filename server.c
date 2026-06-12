@@ -20,6 +20,12 @@
  */
 #define MAX_BACKLOG 5
 
+/*
+ * 1接続に許す処理時間の合計。読みの待ちだけでなく全体に効く
+ * 上限の 1MB を 20KB/s の遅い回線で送り切れる長さ。Apache の既定 (Timeout 60) と同じ
+ */
+#define REQUEST_TIMEOUT_SECS 60
+
 static int try_listen(struct addrinfo *candidates, int family);
 static void serve_client(int client_fd, const char *docroot);
 
@@ -119,6 +125,13 @@ void accept_client_connections(int server_fd, const char *docroot) {
 }
 
 static void serve_client(int client_fd, const char *docroot) {
+    /*
+     * 接続だけして黙るクライアントに子プロセスを占有させない
+     * 途中で 1バイトずつ送られても、alarm は絶対期限なので延命されない
+     * 期限が来たら SIGALRM の既定動作で子プロセスごと終わり、後始末はカーネルに任せる
+     */
+    alarm(REQUEST_TIMEOUT_SECS);
+
     char buf[MAX_REQUEST_HEADER_SIZE];
     struct HTTPRequest req;
 
