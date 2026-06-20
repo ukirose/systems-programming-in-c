@@ -15,13 +15,22 @@
  */
 #define COPY_BUF_SIZE 4096
 
+/* '/' で終わる要求に読み替えて返すファイル。慣習として index.html を使う */
+#define DIRECTORY_INDEX "index.html"
+
 static int is_safe_path(const char *url_path);
 
 int resolve_file(const char *docroot, const char *url_path, struct FileInfo *info) {
     if (!is_safe_path(url_path)) return -1;
 
-    /* url_path は '/' で始まるので、間に区切りを挟まない */
-    int len = snprintf(info->path, sizeof info->path, "%s%s", docroot, url_path);
+    /*
+     * url_path は '/' で始まるので、間に区切りを挟まない
+     * '/' で終わっていればディレクトリの要求とみなし、インデックスファイルの名前を足す
+     */
+    size_t url_len = my_strlen(url_path);
+    const char *index = (url_len > 0 && url_path[url_len - 1] == '/') ? DIRECTORY_INDEX : "";
+
+    int len = snprintf(info->path, sizeof info->path, "%s%s%s", docroot, url_path, index);
     if (len < 0 || (size_t)len >= sizeof info->path) return -1;
 
     /*

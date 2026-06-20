@@ -99,8 +99,16 @@ def check_rejects():
     check("存在しないパスは 404", 404, request("/nope").status)
     check("'..' は 404", 404, request("/../Makefile").status)
 
+    res_root = request("/")
+    res_index = request("/index.html")
+    check("'/' は index.html に読み替わる", 200, res_root.status)
+    check("読み替えた中身は index.html と同じ", res_index.body, res_root.body)
 
-    check("ディレクトリは 404", 404, request("/").status)
+    # 中身の無いディレクトリでは読み替え先が作れない
+    with temp_path("nodir") as path:
+        path.mkdir()
+        check("index.html の無いディレクトリは 404", 404, request("/nodir/").status)
+
     # lstat ではなく open で弾いている。書き込む側が居ないので O_NONBLOCK が無ければここで止まる
     with temp_path("named_pipe") as path:
         os.mkfifo(path)
