@@ -3,3 +3,4 @@
 /docroot/*.cgi
 .DS_Store
 /tests/test_my_string
+/tests/test_my_malloc

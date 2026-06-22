@@ -6,6 +6,7 @@
 #include "file.h"
 #include "log.h"
 #include "cgi.h"
+#include "my_stdlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,6 +29,7 @@
 
 static int try_listen(struct addrinfo *candidates, int family);
 static void serve_client(int client_fd, const char *docroot);
+static void handle_request(int client_fd, const char *docroot, char *buf);
 
 int create_server_socket(const char *port) {
     /* 指定しなかったメンバは 0 になる。getaddrinfo はそれを「指定なし」と読む */
@@ -132,10 +134,22 @@ static void serve_client(int client_fd, const char *docroot) {
      */
     alarm(REQUEST_TIMEOUT_SECS);
 
-    char buf[MAX_REQUEST_HEADER_SIZE];
+    /* 上限いっぱいで 4096バイト。子プロセスのスタックに積まず、必要になってから取る */
+    char *buf = my_malloc(MAX_REQUEST_HEADER_SIZE);
+    if (!buf) {
+        respond_internal_error(client_fd);
+        return;
+    }
+
+    handle_request(client_fd, docroot, buf);
+    my_free(buf);
+}
+
+/* buf の確保と解放は呼出側が持つ。ここでは途中で抜けてよい */
+static void handle_request(int client_fd, const char *docroot, char *buf) {
     struct HTTPRequest req;
 
-    if (read_request_header(client_fd, buf, sizeof buf) < 0
+    if (read_request_header(client_fd, buf, MAX_REQUEST_HEADER_SIZE) < 0
         || parse_http_request(buf, &req) < 0) {
         respond_bad_request(client_fd);
         return;
