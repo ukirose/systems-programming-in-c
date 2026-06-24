@@ -22,5 +22,8 @@ char *my_strrchr(const char *s, int c);
 /* needle が最初に現れた位置。無ければ NULL。空の needle は先頭に一致 */
 char *my_strstr(const char *haystack, const char *needle);
 
+/* A-Z と a-z を同じものとして比べる。ほかは my_strcmp と同じ */
+int my_strcasecmp(const char *a, const char *b);
+
 /* 先頭から accept に含まれる文字が続く長さ */
 size_t my_strspn(const char *s, const char *accept);
