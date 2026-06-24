@@ -4,7 +4,6 @@
 #include "my_string.h"
 #include "io.h"
 #include <stdio.h>
-#include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -85,7 +84,7 @@ const char *guess_content_type(const struct FileInfo *info) {
 
     if (ext) {
         for (size_t i = 0; i < sizeof content_types / sizeof content_types[0]; i++) {
-            if (strcasecmp(ext, content_types[i].ext) == 0) return content_types[i].type;
+            if (my_strcasecmp(ext, content_types[i].ext) == 0) return content_types[i].type;
         }
     }
 

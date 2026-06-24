@@ -65,6 +65,24 @@ char *my_strstr(const char *haystack, const char *needle) {
     return NULL;
 }
 
+/*
+ * 大文字だけを小文字へ倒す。tolower を使わないのはロケールに左右されないため
+ * ヘッダ名と拡張子の照合は ASCII だけ見れば足りる
+ */
+static int fold_case(unsigned char c) {
+    return (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
+}
+
+int my_strcasecmp(const char *a, const char *b) {
+    while (fold_case((unsigned char)*a) == fold_case((unsigned char)*b)) {
+        if (*a == '\0') return 0;
+        a++;
+        b++;
+    }
+
+    return fold_case((unsigned char)*a) - fold_case((unsigned char)*b);
+}
+
 size_t my_strspn(const char *s, const char *accept) {
     const char *head = s;
 

@@ -2,7 +2,6 @@
 
 #include "request.h"
 #include "my_string.h"
-#include <strings.h>
 #include <unistd.h>
 
 #define HTTP_VERSION_PREFIX "HTTP/1."

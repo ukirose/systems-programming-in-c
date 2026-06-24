@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 /*
  * 0x80(非英数字バイト)以上のバイトを含む入力を混ぜている。
@@ -52,7 +53,7 @@ static void check_one_string(void) {
     }
 }
 
-/* strcmp / strncmp / strstr / strspn を標準と突き合わせるテスト */
+/* strcmp / strncmp / strcasecmp / strstr / strspn を標準と突き合わせるテスト */
 static void check_two_strings(void) {
     for (size_t i = 0; i < INPUT_COUNT; i++) {
         const char *s = INPUTS[i];
@@ -60,7 +61,7 @@ static void check_two_strings(void) {
         for (size_t j = 0; j < INPUT_COUNT; j++) {
             const char *t = INPUTS[j];
 
-            /* 比較の 2つは、返る値そのものではなく符号だけを突き合わせる */
+            /* 比較の 3つは、返る値そのものではなく符号だけを突き合わせる */
             compare("my_strcmp", same_sign(my_strcmp(s, t), strcmp(s, t)),
                     "INPUTS[%zu], INPUTS[%zu]", i, j);
 
@@ -69,6 +70,9 @@ static void check_two_strings(void) {
                 compare("my_strncmp", same_sign(my_strncmp(s, t, n), strncmp(s, t, n)),
                         "INPUTS[%zu], INPUTS[%zu], n=%zu", i, j, n);
             }
+
+            compare("my_strcasecmp", same_sign(my_strcasecmp(s, t), strcasecmp(s, t)),
+                    "INPUTS[%zu], INPUTS[%zu]", i, j);
 
             /* 探索の 2つは、返る位置と長さがそのまま一致していなければならない */
             compare("my_strstr", my_strstr(s, t) == strstr(s, t),
