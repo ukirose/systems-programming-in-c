@@ -1,6 +1,4 @@
-/httpd
-*.o
-/docroot/*.cgi
+# 成果物は build/ にまとめてあるので、無視するのはここだけで済む
+/build/
+/httpd/docroot/*.cgi
 .DS_Store
-/tests/test_my_string
-/tests/test_my_malloc

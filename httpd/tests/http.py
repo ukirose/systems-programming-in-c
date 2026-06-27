@@ -19,16 +19,17 @@ from contextlib import contextmanager
 from pathlib import Path
 
 # Python自身が内部で使うための絶対パス
-ROOT = Path(__file__).resolve().parent.parent
-DOCROOT = ROOT / "docroot"
+HTTPD_DIR = Path(__file__).resolve().parent.parent
+REPO = HTTPD_DIR.parent
+DOCROOT = HTTPD_DIR / "docroot"
 
 # テスト環境の基本設定
 PORT = int(os.environ.get("PORT", "8099"))
 TIMEOUT_SECS = 3.0
 
 # httpdへ渡す相対パスとコマンド
-HTTPD_BIN = "./httpd"
-DOCROOT_ARG = "docroot"
+HTTPD_BIN = "build/httpd/httpd"
+DOCROOT_ARG = "httpd/docroot"
 SERVER_ARGS = [HTTPD_BIN, "--debug", f"--port={PORT}", DOCROOT_ARG]
 
 passed = 0
@@ -40,7 +41,7 @@ failed = 0
 # ==============================================================================
 def main():
     # 上のパスはリポジトリルートからの相対なので、そこへ移ってから起動する
-    os.chdir(ROOT)
+    os.chdir(REPO)
     server = subprocess.Popen(SERVER_ARGS, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     try:
