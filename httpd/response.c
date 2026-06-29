@@ -2,8 +2,8 @@
 
 #include "response.h"
 #include "my_string.h"
+#include "my_stdio.h"
 #include "io.h"
-#include <stdio.h>
 
 #define SERVER_NAME "httpd/0.1"
 
@@ -67,7 +67,7 @@ static void write_headers(int fd, const char *status, const char *extra_headers,
     char header[HEADER_BUF_SIZE];
 
     /* off_t の幅は環境によって違うので、書式を固定できる long long に寄せる */
-    int len = snprintf(header, sizeof header,
+    int len = my_snprintf(header, sizeof header,
         "HTTP/1.0 %s\r\n"
         "Server: %s\r\n"
         "Connection: close\r\n"
@@ -77,7 +77,7 @@ static void write_headers(int fd, const char *status, const char *extra_headers,
         "\r\n",
         status, SERVER_NAME, (long long)content_length, content_type, extra_headers);
 
-    /* 収まらなければ snprintf は「書きたかった長さ」を返す。そのまま渡すと配列の外を読む */
+    /* 収まらなければ my_snprintf は「書きたかった長さ」を返す。そのまま渡すと配列の外を読む */
     if (len < 0 || (size_t)len >= sizeof header) return;
 
     write_all(fd, header, (size_t)len);

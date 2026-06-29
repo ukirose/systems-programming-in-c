@@ -2,8 +2,8 @@
 
 #include "file.h"
 #include "my_string.h"
+#include "my_stdio.h"
 #include "io.h"
-#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -29,7 +29,7 @@ int resolve_file(const char *docroot, const char *url_path, struct FileInfo *inf
     size_t url_len = my_strlen(url_path);
     const char *index = (url_len > 0 && url_path[url_len - 1] == '/') ? DIRECTORY_INDEX : "";
 
-    int len = snprintf(info->path, sizeof info->path, "%s%s%s", docroot, url_path, index);
+    int len = my_snprintf(info->path, sizeof info->path, "%s%s%s", docroot, url_path, index);
     if (len < 0 || (size_t)len >= sizeof info->path) return -1;
 
     /*

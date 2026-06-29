@@ -1,6 +1,7 @@
 /* エラーを記録してプロセスを終了する */
 
 #include "log.h"
+#include "my_stdio.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -23,7 +24,7 @@ void log_error_and_exit(const char *fmt, ...) {
 
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(message, sizeof message, fmt, ap);
+    my_vsnprintf(message, sizeof message, fmt, ap);
     va_end(ap);
 
     if (use_syslog) syslog(LOG_ERR, "%s", message);
